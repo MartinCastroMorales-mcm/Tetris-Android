@@ -12,11 +12,9 @@ public class Tetronomino {
 
 
     public Tetronomino(String type) {
-        //FIXME temporary starting cordinates
         this.type = type;
         x = 4;
         y = 0;
-        //TODO: do a basic one with just one square and later add the forms
         adjustPos(type, rotation);
     }
 

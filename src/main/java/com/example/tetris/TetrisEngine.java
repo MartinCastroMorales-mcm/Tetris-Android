@@ -46,16 +46,22 @@ public class TetrisEngine extends SurfaceView implements Runnable, GestureDetect
     private int score = 0;
     private int tetrosPlaced = 0;
     private int lvl = 1;
+    private int pauseBlockX = screenX - 50;
+    private int pauseBlockY = 0;
 
     //Time
     private long nextFrameTime;
     private long nextGameClock;
+
+    private Object pauseLock;
+    private boolean pause;
 
     private boolean Running = true;
     private Context context;
     private final double FPS = 60;
     private double timer = 2;
     private final long MILLIS_PER_SECOND = 1000;
+    Thread thread;
 
     //Other
     GestureDetectorCompat mDetector;
@@ -70,7 +76,7 @@ public class TetrisEngine extends SurfaceView implements Runnable, GestureDetect
         blockSize = screenX / NUM_COLUMNS;
         blockHeight = screenY / NUM_ROWS;
         mDetector = new GestureDetectorCompat(context, this);
-
+        thread = new Thread(this);
         newGame();
 
     }
@@ -83,6 +89,15 @@ public class TetrisEngine extends SurfaceView implements Runnable, GestureDetect
             // an if render boolean may be nesesary to save time.+
             if (newFrameTime()) {
                 draw();
+            }
+            while(pause) {
+                synchronized (this) {
+                    try {
+                        this.wait();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         }
 
@@ -117,7 +132,7 @@ public class TetrisEngine extends SurfaceView implements Runnable, GestureDetect
     }
 
     private void verticalCollision() {
-        int[] tetroXs = tetronomino.getBlockXs();   //TODO: make a general collision funcion
+        int[] tetroXs = tetronomino.getBlockXs();
         int[] tetroYs = tetronomino.getBlockYs();
 
 
@@ -161,14 +176,9 @@ public class TetrisEngine extends SurfaceView implements Runnable, GestureDetect
             switch (event.getAction()) {
 
                 case MotionEvent.ACTION_DOWN:
-                    quickTap = true;
-                    oldX = event.getX() / blockSize;
                     //save touch location to translate
-
                     break;
-
-                case MotionEvent.ACTION_MOVE:       //FIXME just feels unresponsive
-                    quickTap = false;
+                case MotionEvent.ACTION_MOVE:
                     if (onFling) {
                         return true;
                     }
@@ -176,40 +186,38 @@ public class TetrisEngine extends SurfaceView implements Runnable, GestureDetect
                 case MotionEvent.ACTION_UP:     //TODO: al transformar mueve el tetronimo para que este dentro del espacio.
                     float x = event.getX();
                     //Rotate if tap quick
-                    if (quickTap) {
-                        if (event.getY() > 7 * screenY / 8) {
-                            if (screenX / 2 < x && isAbleToMove(tetronomino, tetronomino.x + 1)) {
-                                System.out.println("move right");
+                    if (event.getY() > 6 * screenY / 8) {
+                        if (screenX / 2 < x && isAbleToMove(tetronomino, tetronomino.x + 1)) {
+                            System.out.println("move right");
 
-                                tetronomino.x++;
-                            }
-                            if (screenX / 2 > x && isAbleToMove(tetronomino, tetronomino.x - 1)) {
-                                System.out.println("moveLeft");
-                                tetronomino.x--;
-                            }
-                            tetronomino.adjustPos(tetronomino.type, tetronomino.rotation);
+                            tetronomino.x++;
+                        }
+                        if (screenX / 2 > x && isAbleToMove(tetronomino, tetronomino.x - 1)) {
+                            System.out.println("moveLeft");
+                            tetronomino.x--;
+                        }
+                        tetronomino.adjustPos(tetronomino.type, tetronomino.rotation);
+                    } else {
+
+                        if (screenX / 2 > x) {
+                            //tap left
+                            System.out.println("rotate CCW");
+                            tetronomino.adjustPos(tetronomino.type, tetronomino.rotation - 90);
                         } else {
-
-                            if (screenX / 2 > x) {
-                                //tap left
-                                System.out.println("rotate CCW");
-                                tetronomino.adjustPos(tetronomino.type, tetronomino.rotation - 90);
-                            } else {
-                                //tap right
-                                System.out.println("rotate CW");
-                                tetronomino.adjustPos(tetronomino.type, tetronomino.rotation + 90);
-                            }
-                            System.out.println("rotation " + tetronomino.rotation);
+                            //tap right
+                            System.out.println("rotate CW");
+                            tetronomino.adjustPos(tetronomino.type, tetronomino.rotation + 90);
                         }
+                        System.out.println("rotation " + tetronomino.rotation);
+                    }
 
-                        if (!Running) {
-                            System.out.println("newGame");
-                            newGame();
-                        }
+                    if (!Running) {
+                        System.out.println("newGame");
+                        newGame();
                     }
             }
-
         }
+
         return true;
     }
 
@@ -269,7 +277,11 @@ public class TetrisEngine extends SurfaceView implements Runnable, GestureDetect
             paint.setColor(Color.WHITE);
             canvas.drawText("Score: " + score, 20, 30, paint);
             canvas.drawText("Level: " + lvl, 20, 70, paint);
+            //draw nextPiece
+            String nextType = pendingTypes.get(0);
+            canvas.drawText("Next Piece: " + nextType, screenX / 2, 70, paint);
             //TODO: DRAW BUTTONS
+            //canvas.drawBitmap(R.drawable.pause_image, pauseBlockX, 0, paint);
 
             if (!Running) {
                 //draw Game over
@@ -284,12 +296,16 @@ public class TetrisEngine extends SurfaceView implements Runnable, GestureDetect
     }
 
     public void pause() {
-        //Thread.join()
+        synchronized (this) {
+            pause = true;
+        }
     }
 
     public void resume() {
-        Thread thread = new Thread(this);
-        thread.start();
+        synchronized (this) {
+            pause = false;
+            this.notifyAll();
+        }
     }
 
     public boolean newFrameTime() {
@@ -321,8 +337,17 @@ public class TetrisEngine extends SurfaceView implements Runnable, GestureDetect
     }
 
     private Tetronomino newTetro() {
-        if (pendingTypes.size() == 0) {
+        String tempType = null;
+        if (pendingTypes.size() <= 1) {
+            if (pendingTypes.size() == 1) {
+                //Create temp to add
+                tempType = pendingTypes.get(0);
+            }
             pendingTypes = CreateNewArrayOfTypes();
+            if (tempType != null) {
+                pendingTypes.add(tempType);
+            }
+
         }
         if (tetronomino != null) {
             int[] tetroXs = tetronomino.getBlockXs();
@@ -347,23 +372,23 @@ public class TetrisEngine extends SurfaceView implements Runnable, GestureDetect
                 lvl = 1;
                 timer = 2;
                 break;
-            case 5:
+            case 10:
                 lvl = 2;
                 timer = 2.5;
                 break;
-            case 10:
+            case 20:
                 lvl = 3;
                 timer = 3;
                 break;
-            case 15:
+            case 30:
                 lvl = 3;
                 timer = 4;
                 break;
-            case 20:
+            case 40:
                 lvl = 4;
                 timer = 5;
                 break;
-            case 25:
+            case 50:
                 lvl = 5;
                 timer = 6;
                 break;
@@ -419,14 +444,27 @@ public class TetrisEngine extends SurfaceView implements Runnable, GestureDetect
     public boolean isAbleToMove(Tetronomino tetronomino, int newX) {
         Tetronomino testTetro = new Tetronomino(tetronomino.type);
         testTetro.x = newX;
+        testTetro.y = tetronomino.y;
         testTetro.adjustPos(testTetro.type, tetronomino.rotation);
         int[] tetroXs = testTetro.getBlockXs();
+        int[] tetroYs = testTetro.getBlockYs();
 
         int x;
+        int y;
         for (int i = 0; i < tetroXs.length; i++) {
             x = tetroXs[i];
+            y = tetroYs[i];
 
             if (x < 0 || x >= NUM_COLUMNS) {
+                return false;
+            }
+            System.out.println("x: " + x + "y: " + y);
+            try {
+                if (usedSpaces[x + y * NUM_COLUMNS]) {
+                    System.out.println("horizontal collision");
+                    return false;
+                }
+            } catch (ArrayIndexOutOfBoundsException e) {
                 return false;
             }
 
@@ -494,7 +532,9 @@ public class TetrisEngine extends SurfaceView implements Runnable, GestureDetect
     }
 
     public void checkToDeleteRow() {
+        System.out.println("CheckDeleteRow");
         int usedCounter = 0;
+        int numberOfLines = 0;
         for (int y = 0; y < NUM_ROWS; y++) {
             //Check if row is full
             for (int x = 0; x < NUM_COLUMNS; x++) {
@@ -503,6 +543,7 @@ public class TetrisEngine extends SurfaceView implements Runnable, GestureDetect
                     if (usedCounter == NUM_COLUMNS) {
                         //set used spaces to false
                         System.out.println("delete line " + y);
+                        numberOfLines++;
                         for (int i = 0; i < NUM_COLUMNS; i++) {
                             usedSpaces[i + y * NUM_COLUMNS] = false;
                         }
@@ -521,14 +562,31 @@ public class TetrisEngine extends SurfaceView implements Runnable, GestureDetect
             }
             usedCounter = 0;
 
+
         }
+        System.out.println("n of lines: " + numberOfLines);
+        switch (numberOfLines) {
+            case 1:
+                score += 100;
+                break;
+            case 2:
+                score += 200;
+                break;
+            case 3:
+                score += 400;
+                break;
+            case 4:
+                score += 800;
+                break;
+        }
+
 
     }
 
     public void blockFreefall(int nLine) {
         //activate freefall
         System.out.println("start freefall");
-        //first sort the array
+        //first sort the array from the lower ones to the higher ones
         Collections.sort(blocksToRender, new Comparator<Square>() {//FIXME LAMBDA WHAT?
             @Override
             public int compare(Square o1, Square o2) {
@@ -561,4 +619,10 @@ public class TetrisEngine extends SurfaceView implements Runnable, GestureDetect
         return o1.y - o2.y;
     }
 }
-//TODO: Delete Lines: ya se puede detectar si una linea esta llena y cual de las lineas esta llena lo que falta es; frefall, change the array that holds the tetros to render to instead hold squares to render, then you only need to eliminate the squares.
+//TODO:
+// 1. Collisiones laterales con tetros, DONE
+// 2. pause to tab out, DONE
+// 3. menu pause,
+// 3.5 scores. DONE
+// 4. Restablish fullscreen after notification. DONE?
+// 5. Change the icon.
