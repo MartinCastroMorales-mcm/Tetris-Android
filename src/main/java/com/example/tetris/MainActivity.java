@@ -44,5 +44,6 @@ import android.view.View;
      protected void onPause() {
          super.onPause();
          tetrisEngine.pause();
+
      }
  }
