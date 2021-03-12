@@ -1,5 +1,15 @@
 <resources>
     <string name="app_name">Tetris</string>
     <string name="start_game">Start</string>
-    <string name="high_scores">High Scores</string>
+    <string name="high_scores_button">High Scores</string>
+    <string name="title_activity_score__table">ScrollingActivity</string>
+    <string name="done">Done</string>
+    <string-array name="scores">
+        <item>Test</item>
+        <item>Test2</item>
+        <item>Test3</item>
+        <item>Test4</item>
+        <item>Test5</item>
+    </string-array>
+    <string name="action_settings">Settings</string>
 </resources>

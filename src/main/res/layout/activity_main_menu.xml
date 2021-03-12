@@ -25,7 +25,7 @@
         android:layout_marginBottom="40dp"
         android:background="#F44336"
         android:backgroundTint="#F44336"
-        android:text="@string/high_scores"
+        android:text="@string/high_scores_button"
         android:onClick="onClickSeeHighScores"
         app:iconTint="#FD0000"
         app:layout_constraintBottom_toTopOf="@+id/button"

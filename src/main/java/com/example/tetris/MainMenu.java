@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.view.View;
 
 public class MainMenu extends AppCompatActivity {
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -27,7 +26,8 @@ public class MainMenu extends AppCompatActivity {
     }
 
     public void onClickSeeHighScores(View view) {
-        //TODO: Create activity that accesses the SQLite db (that does not exist yet) with all the previus high scores and the name of the run associated.
-        // Probably have some sort options like sort by score or date or alphabetically
+        Intent intentSeeHighScores = new Intent(this, ScoreTableActivity.class);
+        startActivity(intentSeeHighScores);
+
     }
 }
