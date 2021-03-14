@@ -46,12 +46,6 @@ public class SQLiteHelper extends SQLiteOpenHelper {
         return true;
     }
 
-    public Cursor getData(int _id) {
-        SQLiteDatabase db = getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT * FROM SCORE_DATABASE", null);
-        return cursor;
-    }
-
     private void fillTheDbWithPlaceHolderInfo(SQLiteDatabase db) {
         saveScore("Mercury", 10, db);
         saveScore("Venus", 1400, db);
