@@ -1,6 +1,6 @@
 13/03/2021
 # MyTetris
-Is tetris for android
+It's tetris for android
 
 It has a simple-and-precise controls with an SQLite db to save the score
 
