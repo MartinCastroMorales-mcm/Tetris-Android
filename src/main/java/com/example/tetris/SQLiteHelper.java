@@ -11,7 +11,7 @@ import androidx.annotation.Nullable;
 import java.io.Serializable;
 
 public class SQLiteHelper extends SQLiteOpenHelper {
-    //SQLiteHelper cannot be serialize because it does not have a no arg constructor.
+
 
     public static final int DATABASE_VERSION = 3;
     public static final String DATABASE_NAME = "ScoreRecords.db";

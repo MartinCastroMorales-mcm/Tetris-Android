@@ -13,7 +13,6 @@ public class MainMenu extends AppCompatActivity {
         setContentView(R.layout.activity_main_menu);
     }
 
-    @SuppressWarnings("deprecation")    //No entiendo como funciona el metodo nuevo para la pantalla completa
     @Override
     protected void onResume() {
         super.onResume();
