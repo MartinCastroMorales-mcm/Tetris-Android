@@ -17,7 +17,8 @@ public class PauseActivity extends AppCompatActivity {
         setContentView(R.layout.activity_pause);
         int score = getIntent().getIntExtra("score", 0);
         TextView textView = findViewById(R.id.pause_score);
-        textView.setText("Score: " + score);
+        String scoreText = "Score: "+score;
+        textView.setText(scoreText);
     }
 
     public void onClickResume(View view) {

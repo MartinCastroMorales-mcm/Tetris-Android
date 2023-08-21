@@ -34,7 +34,7 @@ public class SaveScoreActivity extends AppCompatActivity {
         tetrosPlacedView = findViewById(R.id.tetros_placed);
         deletedRowsView = findViewById(R.id.deleted_rows);
 
-        scoreView.setText("Score: " + score);
+        scoreView.setText("Score: " +score);
         tetrosPlacedView.setText("TetrosPlaced: " + tetrosPlaced);
         deletedRowsView.setText("DeletedRows" + deletedRows);
 

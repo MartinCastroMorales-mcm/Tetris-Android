@@ -1,6 +1,5 @@
 package com.example.tetris;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -83,6 +82,7 @@ public class TetrisEngine extends SurfaceView implements Runnable, GestureDetect
 
     public TetrisEngine(Context context, int w, int h, Activity activity) {
         super(context);
+
         screenX = w;
         screenY = h;
         this.context = context;
@@ -98,6 +98,7 @@ public class TetrisEngine extends SurfaceView implements Runnable, GestureDetect
         newGame();
         this.activity = activity;
     }
+
 
     @Override
     public void run() {
