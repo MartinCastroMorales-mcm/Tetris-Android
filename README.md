@@ -27,3 +27,4 @@ android version: 6.0 Marshmallow
 ## Note: 
 
 There is suppose to be a longpress control to save tetros for later but it doesn't work and sometimes it gets stuck for some threading problem.
+# Tetris-Android
